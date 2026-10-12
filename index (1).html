@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X Comment Generator</title>
+  <style>
+    :root {
+      --red-50: #fff5f5;
+      --red-100: #ffe3e3;
+      --red-200: #ffc9c9;
+      --red-300: #ffa8a8;
+      --red-400: #ff8787;
+      --red-500: #e03131;
+      --red-600: #c92a2a;
+      --red-700: #a61e1e;
+      --text: #1a1010;
+      --text-light: #6b4545;
+      --white: #ffffff;
+      --border: #f0d0d0;
+      --shadow: 0 4px 24px rgba(224, 49, 49, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(160deg, var(--red-50) 0%, #fff 45%, var(--red-100) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+    }
+    .container {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    header { text-align: center; padding: 12px 0 8px; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--red-600);
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      margin-top: 6px;
+    }
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .counter {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--red-600);
+      text-align: center;
+      padding: 10px 16px;
+      background: var(--red-50);
+      border-radius: 10px;
+      border: 1px solid var(--red-200);
+    }
+    .preview-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .preview {
+      background: var(--red-50);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 140px;
+      white-space: pre-wrap;
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .preview.empty {
+      color: var(--text-light);
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      width: 100%;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--red-500);
+      color: var(--white);
+      box-shadow: 0 4px 14px rgba(224, 49, 49, 0.35);
+    }
+    .btn-primary:hover { background: var(--red-600); }
+    .btn-primary:disabled {
+      background: var(--red-300);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: var(--white);
+      color: var(--red-600);
+      border: 2px solid var(--red-300);
+    }
+    .btn-secondary:hover {
+      background: var(--red-50);
+      border-color: var(--red-400);
+    }
+    .btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .hint {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-light);
+      padding: 8px 12px;
+      background: var(--red-50);
+      border-radius: 8px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--red-700);
+      color: var(--white);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    footer {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      text-align: center;
+    }
+    @media (min-width: 480px) {
+      h1 { font-size: 2rem; }
+      .actions { flex-direction: row; }
+      .actions button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>X Comment Generator</h1>
+      <p class="subtitle">PerthSanta x Domiia | King Power 37th</p>
+    </header>
+    <div class="card">
+      <div class="counter" id="counter">Đã copy: 0 comment</div>
+      <div>
+        <div class="preview-label">Last generated comment</div>
+        <div class="preview empty" id="preview">Press Generate &amp; Copy to create a comment</div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" id="btnGenerate">Generate &amp; Copy</button>
+        <button class="btn-secondary" id="btnPost" disabled>Generate &amp; Post to X</button>
+      </div>
+      <div class="hint">Press Space to Generate &amp; Post to X</div>
+    </div>
+    <footer>No login required. All comments stay on your device.</footer>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    (function () {
+      const FIXED_SUFFIX = '\n\nPSD FAMILY 37TH KINGPOWER\n\n#KingPower37thAnniversary';
+      const FIXED_LEN = FIXED_SUFFIX.length;
+      const MAX_BODY = 280 - FIXED_LEN - 5;
+
+      // Multi-language phrase banks (NO Vietnamese)
+      // Each language has its own sets; generator picks a language then builds a comment in that language.
+
+      const LANGS = {
+        en: {
+          openings: [
+            "Loving", "Obsessed with", "Really into", "Impressed by", "So into",
+            "Happy to see", "This hits different", "Huge fan of", "Excited about",
+            "Blown away by", "Truly into", "Can't stop watching", "Feeling the energy from",
+            "Living for", "Completely hooked on", "Still thinking about"
+          ],
+          visual: [
+            "PerthSanta's visuals are unreal",
+            "PerthSanta look incredible together",
+            "the visual of PerthSanta is pure excellence",
+            "PerthSanta's presence is so striking",
+            "every shot of PerthSanta feels premium"
+          ],
+          handsome: [
+            "Perth and Santa look so handsome",
+            "Perth and Santa's charm is magnetic",
+            "how sharp Perth and Santa look today",
+            "Perth and Santa own every frame",
+            "Perth and Santa's vibe is pure attraction"
+          ],
+          family: [
+            "the PerthSantaDomiia family is just too cute",
+            "this PerthSantaDomiia family moment melts hearts",
+            "the cuteness of the PerthSantaDomiia family is unreal",
+            "PerthSantaDomiia family vibes are everything",
+            "watching the PerthSantaDomiia family is pure joy"
+          ],
+          domiia: [
+            "Domiia is just too cute",
+            "Domiia's energy is pure sunshine",
+            "how adorable and lively Domiia is",
+            "Domiia brings so much cuteness",
+            "Domiia's playful vibe steals the show"
+          ],
+          energy: [
+            "the PSD family energy is so full of life",
+            "PSD family's vibrant energy lights up everything",
+            "the energetic style of the PSD family is infectious",
+            "PSD family brings such lively and warm energy",
+            "the PSD family presence is pure positive energy"
+          ],
+          thanks: [
+            "thank you King Power for having the PSD family",
+            "grateful to King Power for inviting PSD",
+            "thanks King Power for bringing PSD to this event",
+            "appreciate King Power for having PerthSanta and Domiia",
+            "thank you King Power for this special moment with PSD"
+          ],
+          closers: [
+            "Absolute win.", "This is how it's done.", "Simply outstanding.",
+            "Nothing but love.", "Truly heartwarming.", "Keep it coming.",
+            "This hits different.", "Pure joy.", "Well executed.", "So well done."
+          ]
+        },
+        th: {
+          openings: [
+            "ชอบมาก", "หลงรัก", "ประทับใจ", "ดีใจที่ได้เห็น", "สุดยอด",
+            "ฟินมาก", "ถูกใจ", "อินสุด", "ปลื้มมาก", "ชื่นชม"
+          ],
+          visual: [
+            "ภาพลักษณ์ PerthSanta สวยมาก",
+            "PerthSanta ดูดีมากในวันนี้",
+            "วิชวลของ PerthSanta ปังมาก",
+            "PerthSanta มีพลังบนเวทีสุดๆ",
+            "ทุกช็อตของ PerthSanta ดูพรีเมียม"
+          ],
+          handsome: [
+            "Perth กับ Santa หล่อมาก",
+            "Perth และ Santa มีเสน่ห์เหลือเกิน",
+            "Perth กับ Santa ดูดีทุกมุม",
+            "ความหล่อของ Perth และ Santa โดดเด่น",
+            "Perth กับ Santa มีออร่าแรงมาก"
+          ],
+          family: [
+            "ครอบครัว PerthSantaDomiia น่ารักสุดๆ",
+            "โมเมนต์ครอบครัว PerthSantaDomiia น่ารักมาก",
+            "ความน่ารักของครอบครัว PerthSantaDomiia ละลายใจ",
+            "ครอบครัว PerthSantaDomiia มีความอบอุ่นมาก",
+            "ได้เห็นครอบครัว PerthSantaDomiia แล้วมีความสุข"
+          ],
+          domiia: [
+            "Domiia น่ารักมาก",
+            "Domiia มีพลังงานสดใส",
+            "Domiia น่ารักและร่าเริงสุดๆ",
+            "Domiia นำความน่ารักมาเต็มๆ",
+            "Domiia น่ารักจนใจละลาย"
+          ],
+          energy: [
+            "พลังงานของครอบครัว PSD เต็มเปี่ยม",
+            "ครอบครัว PSD มีพลังและสดใสมาก",
+            "สไตล์เต็มไปด้วยพลังของครอบครัว PSD น่าประทับใจ",
+            "ครอบครัว PSD นำพลังบวกมาเต็มๆ",
+            "ออร่าของครอบครัว PSD สดใสและอบอุ่น"
+          ],
+          thanks: [
+            "ขอบคุณ King Power ที่เชิญครอบครัว PSD",
+            "ขอบคุณ King Power ที่ให้ PSD ได้ร่วมงาน",
+            "ซาบซึ้งที่ King Power เชิญ PerthSanta และ Domiia",
+            "ขอบคุณ King Power สำหรับโมเมนต์พิเศษนี้",
+            "ขอบคุณ King Power ที่พา PSD มาในงานนี้"
+          ],
+          closers: [
+            "สุดยอดมาก.", "ดีใจมาก.", "น่ารักสุดๆ.", "ประทับใจมาก.",
+            "ฟินสุด.", "อบอุ่นมาก.", "ยอดเยี่ยม.", "ดีมากเลย."
+          ]
+        },
+        ko: {
+          openings: [
+            "너무 좋아해요", "반했어요", "감동이에요", "행복해요", "최고예요",
+            "완전 팬이에요", "설레요", "멋져요", "정말 인상적이에요", "사랑해요"
+          ],
+          visual: [
+            "PerthSanta 비주얼이 미쳤어요",
+            "PerthSanta 오늘 정말 멋져요",
+            "PerthSanta 비주얼이 프리미엄이에요",
+            "PerthSanta 존재감이 확실해요",
+            "PerthSanta 모든 장면이 아름다워요"
+          ],
+          handsome: [
+            "Perth랑 Santa 너무 잘생기고 매력적이에요",
+            "Perth와 Santa 비주얼이 장난 아니에요",
+            "Perth와 Santa가 프레임을 장악해요",
+            "Perth와 Santa 카리스마가 넘쳐요",
+            "Perth와 Santa의 매력이 돋보여요"
+          ],
+          family: [
+            "PerthSantaDomiia 가족이 너무 귀여워요",
+            "PerthSantaDomiia 가족 모먼트가 힐링이에요",
+            "PerthSantaDomiia 가족의 귀여움이 최고예요",
+            "PerthSantaDomiia 가족 분위기가 따뜻해요",
+            "PerthSantaDomiia 가족을 보니 행복해요"
+          ],
+          domiia: [
+            "Domiia가 너무 귀여워요",
+            "Domiia 에너지가 햇살 같아요",
+            "Domiia가 활발하고 사랑스러워요",
+            "Domiia가 귀여움을 가득 채워줘요",
+            "Domiia 매력이 넘쳐요"
+          ],
+          energy: [
+            "PSD 가족의 에너지가 정말 생동감 있어요",
+            "PSD 가족의 활기찬 에너지가 빛나요",
+            "PSD 가족의 에너지 넘치는 스타일이 인상적이에요",
+            "PSD 가족이 긍정 에너지를 가득 줘요",
+            "PSD 가족의 분위기가 밝고 따뜻해요"
+          ],
+          thanks: [
+            "King Power가 PSD 가족을 초대해 주셔서 감사해요",
+            "King Power 덕분에 PSD를 볼 수 있어서 좋아요",
+            "King Power가 PerthSanta와 Domiia를 초대해 주셔서 감사합니다",
+            "King Power의 초청에 감사드려요",
+            "King Power와 PSD의 특별한 순간에 감사해요"
+          ],
+          closers: [
+            "최고예요.", "너무 좋아요.", "감동이에요.", "행복해요.",
+            "완벽해요.", "사랑스러워요.", "멋져요.", "감사해요."
+          ]
+        },
+        ja: {
+          openings: [
+            "大好きです", "魅了されました", "感動しています", "嬉しいです", "最高です",
+            "ファンです", "ワクワクします", "素敵です", "印象的です", "愛しています"
+          ],
+          visual: [
+            "PerthSantaのビジュアルが素晴らしいです",
+            "PerthSantaが今日とても素敵です",
+            "PerthSantaのビジュアルがプレミアムです",
+            "PerthSantaの存在感が強いです",
+            "PerthSantaの全てのショットが美しいです"
+          ],
+          handsome: [
+            "PerthとSantaがとてもハンサムで魅力的です",
+            "PerthとSantaのビジュアルがすごいです",
+            "PerthとSantaがフレームを支配しています",
+            "PerthとSantaのカリスマが溢れています",
+            "PerthとSantaの魅力が際立っています"
+          ],
+          family: [
+            "PerthSantaDomiiaファミリーがとても可愛いです",
+            "PerthSantaDomiiaファミリーの瞬間が癒しです",
+            "PerthSantaDomiiaファミリーの可愛さが最高です",
+            "PerthSantaDomiiaファミリーの雰囲気が温かいです",
+            "PerthSantaDomiiaファミリーを見ると幸せです"
+          ],
+          domiia: [
+            "Domiiaがとても可愛いです",
+            "Domiiaのエネルギーが太陽のようです",
+            "Domiiaが元気で愛らしいです",
+            "Domiiaが可愛さをいっぱい届けてくれます",
+            "Domiiaの魅力が溢れています"
+          ],
+          energy: [
+            "PSDファミリーのエネルギーが生き生きしています",
+            "PSDファミリーの活気あるエネルギーが輝いています",
+            "PSDファミリーのエネルギッシュなスタイルが印象的です",
+            "PSDファミリーがポジティブなエネルギーをくれます",
+            "PSDファミリーの雰囲気が明るく温かいです"
+          ],
+          thanks: [
+            "King PowerがPSDファミリーを招待してくれてありがとう",
+            "King PowerのおかげでPSDを見られて嬉しいです",
+            "King PowerがPerthSantaとDomiiaを招待してくれて感謝です",
+            "King Powerの招待に感謝します",
+            "King PowerとPSDの特別な瞬間に感謝です"
+          ],
+          closers: [
+            "最高です。", "とても良いです。", "感動です。", "幸せです。",
+            "完璧です。", "愛らしいです。", "素敵です。", "感謝です。"
+          ]
+        },
+        zh: {
+          openings: [
+            "超喜欢", "被迷住了", "很感动", "好开心", "太棒了",
+            "真爱粉", "好期待", "很赞", "印象深刻", "好爱"
+          ],
+          visual: [
+            "PerthSanta的视觉效果太绝了",
+            "PerthSanta今天看起来很棒",
+            "PerthSanta的形象很高级",
+            "PerthSanta的存在感很强",
+            "PerthSanta每一帧都很美"
+          ],
+          handsome: [
+            "Perth和Santa好帅好有魅力",
+            "Perth和Santa的颜真的绝",
+            "Perth和Santa完全掌控画面",
+            "Perth和Santa的气场好强",
+            "Perth和Santa的魅力太突出了"
+          ],
+          family: [
+            "PerthSantaDomiia一家太可爱了",
+            "PerthSantaDomiia家庭时刻好治愈",
+            "PerthSantaDomiia一家的可爱值拉满",
+            "PerthSantaDomiia家庭氛围好温暖",
+            "看到PerthSantaDomiia一家就很幸福"
+          ],
+          domiia: [
+            "Domiia太可爱了",
+            "Domiia的能量像阳光一样",
+            "Domiia又活泼又可爱",
+            "Domiia带来满满的可爱",
+            "Domiia的魅力溢出屏幕"
+          ],
+          energy: [
+            "PSD一家的能量好有活力",
+            "PSD家庭充满活力的能量在发光",
+            "PSD家庭充满能量的风格很印象深刻",
+            "PSD一家带来满满正能量",
+            "PSD家庭的氛围明亮又温暖"
+          ],
+          thanks: [
+            "感谢King Power邀请PSD一家",
+            "谢谢King Power让我们看到PSD",
+            "感谢King Power邀请PerthSanta和Domiia",
+            "感谢King Power的邀请",
+            "感谢King Power与PSD的特别时刻"
+          ],
+          closers: [
+            "太棒了。", "好喜欢。", "很感动。", "好幸福。",
+            "完美。", "好可爱。", "很赞。", "感谢。"
+          ]
+        },
+        es: {
+          openings: [
+            "Me encanta", "Obsesionado con", "Impresionado por", "Feliz de ver", "Increíble",
+            "Gran fan de", "Emocionado por", "Me vuelve loco", "Realmente into", "Viviendo por"
+          ],
+          visual: [
+            "Los visuales de PerthSanta son increíbles",
+            "PerthSanta se ven espectaculares juntos",
+            "la presencia visual de PerthSanta es premium",
+            "PerthSanta tienen una presencia impactante",
+            "cada toma de PerthSanta se siente especial"
+          ],
+          handsome: [
+            "Perth y Santa se ven tan guapos",
+            "el encanto de Perth y Santa es magnético",
+            "qué estilo tienen Perth y Santa hoy",
+            "Perth y Santa dominan cada frame",
+            "la vibra de Perth y Santa es pura atracción"
+          ],
+          family: [
+            "la familia PerthSantaDomiia es demasiado linda",
+            "este momento de la familia PerthSantaDomiia derrite corazones",
+            "la ternura de la familia PerthSantaDomiia es irreal",
+            "las vibes de la familia PerthSantaDomiia lo son todo",
+            "ver a la familia PerthSantaDomiia es pura alegría"
+          ],
+          domiia: [
+            "Domiia es demasiado cute",
+            "la energía de Domiia es puro sol",
+            "qué adorable y vivaz es Domiia",
+            "Domiia trae tanta ternura",
+            "la vibra juguetona de Domiia roba la escena"
+          ],
+          energy: [
+            "la energía de la familia PSD está llena de vida",
+            "la energía vibrante de la familia PSD lo ilumina todo",
+            "el estilo energético de la familia PSD es contagioso",
+            "la familia PSD trae una energía tan cálida y viva",
+            "la presencia de la familia PSD es pura energía positiva"
+          ],
+          thanks: [
+            "gracias King Power por tener a la familia PSD",
+            "agradecido con King Power por invitar a PSD",
+            "gracias King Power por traer a PerthSanta y Domiia",
+            "aprecio que King Power haya invitado a PSD",
+            "gracias King Power por este momento especial con PSD"
+          ],
+          closers: [
+            "Victoria absoluta.", "Así se hace.", "Simplemente outstanding.",
+            "Puro amor.", "Verdaderamente conmovedor.", "Que siga así.",
+            "Esto es diferente.", "Pura alegría.", "Bien ejecutado.", "Muy bien hecho."
+          ]
+        },
+        id: {
+          openings: [
+            "Suka banget", "Tergila-gila", "Terkesan dengan", "Senang lihat", "Keren banget",
+            "Fans berat", "Excited banget", "Kecanduan", "Beneran suka", "Hidup untuk"
+          ],
+          visual: [
+            "Visual PerthSanta keren banget",
+            "PerthSanta kelihatan luar biasa bareng",
+            "visual PerthSanta pure excellence",
+            "kehadiran PerthSanta sangat striking",
+            "setiap shot PerthSanta terasa premium"
+          ],
+          handsome: [
+            "Perth dan Santa ganteng banget",
+            "charm Perth dan Santa magnetik",
+            "Perth dan Santa terlihat tajam hari ini",
+            "Perth dan Santa kuasai setiap frame",
+            "vibe Perth dan Santa pure attraction"
+          ],
+          family: [
+            "keluarga PerthSantaDomiia lucu banget",
+            "momen keluarga PerthSantaDomiia bikin meleleh",
+            "kelucuan keluarga PerthSantaDomiia unreal",
+            "vibe keluarga PerthSantaDomiia is everything",
+            "ngeliat keluarga PerthSantaDomiia pure joy"
+          ],
+          domiia: [
+            "Domiia lucu banget",
+            "energi Domiia pure sunshine",
+            "Domiia adorable dan lively",
+            "Domiia bawa banyak cuteness",
+            "vibe playful Domiia curi perhatian"
+          ],
+          energy: [
+            "energi keluarga PSD penuh kehidupan",
+            "energi vibrant keluarga PSD nyalain semuanya",
+            "gaya energik keluarga PSD menular",
+            "keluarga PSD bawa energi hangat dan hidup",
+            "kehadiran keluarga PSD pure positive energy"
+          ],
+          thanks: [
+            "terima kasih King Power sudah undang keluarga PSD",
+            "bersyukur ke King Power yang undang PSD",
+            "makasih King Power sudah bawa PerthSanta dan Domiia",
+            "appreciate King Power yang undang PSD",
+            "terima kasih King Power untuk momen spesial ini dengan PSD"
+          ],
+          closers: [
+            "Absolute win.", "Gini caranya.", "Simply outstanding.",
+            "Pura cinta.", "Beneran menghangatkan.", "Terus aja.",
+            "Ini beda.", "Pura joy.", "Well executed.", "Bagus banget."
+          ]
+        }
+      };
+
+      const LANG_KEYS = Object.keys(LANGS);
+
+      function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function capitalize(str) {
+        if (!str) return str;
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      function buildComment(lang) {
+        const L = LANGS[lang];
+        const roll = Math.random();
+        let parts = [];
+
+        // Random structure emphasizing different themes
+        const themeRoll = Math.random();
+        if (themeRoll < 0.15) {
+          // visual + handsome
+          parts = [pick(L.openings), pick(L.visual) + '.', pick(L.handsome) + '.', pick(L.closers)];
+        } else if (themeRoll < 0.30) {
+          // family + domiia
+          parts = [pick(L.openings), pick(L.family) + '.', pick(L.domiia) + '.', pick(L.closers)];
+        } else if (themeRoll < 0.45) {
+          // energy + thanks
+          parts = [pick(L.openings), pick(L.energy) + '.', pick(L.thanks) + '.', pick(L.closers)];
+        } else if (themeRoll < 0.60) {
+          // visual + family + thanks
+          parts = [pick(L.openings), pick(L.visual) + '.', pick(L.family) + '.', pick(L.thanks) + '.'];
+        } else if (themeRoll < 0.75) {
+          // handsome + domiia + energy
+          parts = [pick(L.openings), pick(L.handsome) + '.', pick(L.domiia) + '.', pick(L.energy) + '.'];
+        } else if (themeRoll < 0.88) {
+          // short: one main theme
+          const themes = [L.visual, L.handsome, L.family, L.domiia, L.energy, L.thanks];
+          parts = [pick(L.openings), pick(pick(themes)) + '.', pick(L.closers)];
+        } else {
+          // longer mix
+          parts = [pick(L.openings), pick(L.family) + '.', pick(L.domiia) + '.', pick(L.thanks) + '.', pick(L.closers)];
+        }
+
+        let body = parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+        // For CJK languages, capitalization less critical; for others apply
+        if (['en', 'es', 'id'].includes(lang)) {
+          body = capitalize(body);
+        }
+        if (!/[.!?。！？]$/.test(body)) {
+          body += (['zh', 'ja'].includes(lang) ? '。' : '.');
+        }
+        return body;
+      }
+
+      function generateCommentBody() {
+        const lang = pick(LANG_KEYS);
+        let body = buildComment(lang);
+        if (body.length > MAX_BODY) {
+          body = body.slice(0, MAX_BODY - 1).trim();
+          if (!/[.!?。！？]$/.test(body)) {
+            body += (['zh', 'ja'].includes(lang) ? '。' : '.');
+          }
+        }
+        return body;
+      }
+
+      function formatFullComment(body) {
+        return body + FIXED_SUFFIX;
+      }
+
+      const STORAGE_KEY = 'xcg_psd_kingpower_multi_v1';
+      let state = { count: 0, history: [] };
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed.count === 'number' && Array.isArray(parsed.history)) {
+              state = parsed;
+            }
+          }
+        } catch (e) {}
+      }
+
+      function saveState() {
+        try {
+          if (state.history.length > 1500) {
+            state.history = state.history.slice(-1500);
+          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
+
+      let lastFullComment = null;
+
+      function updateUI() {
+        document.getElementById('counter').textContent = `Đã copy: ${state.count} comment`;
+        const preview = document.getElementById('preview');
+        if (lastFullComment) {
+          preview.textContent = lastFullComment;
+          preview.classList.remove('empty');
+          document.getElementById('btnPost').disabled = false;
+        }
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.remove('show'), 1800);
+      }
+
+      function generateUnique() {
+        for (let i = 0; i < 120; i++) {
+          const body = generateCommentBody();
+          if (!state.history.includes(body)) return body;
+        }
+        return generateCommentBody();
+      }
+
+      async function generateAndCopy(alsoPost) {
+        const body = generateUnique();
+        const full = formatFullComment(body);
+
+        try {
+          await navigator.clipboard.writeText(full);
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = full;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); }
+          catch (e2) {
+            showToast('Copy failed. Please copy manually.');
+            lastFullComment = full;
+            updateUI();
+            return;
+          }
+          document.body.removeChild(ta);
+        }
+
+        lastFullComment = full;
+        state.count += 1;
+        state.history.push(body);
+        saveState();
+        updateUI();
+        showToast(alsoPost ? 'Copied & opening X' : 'Comment copied');
+
+        if (alsoPost) {
+          setTimeout(() => {
+            const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(full);
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }, 300);
+        }
+      }
+
+      document.getElementById('btnGenerate').addEventListener('click', () => generateAndCopy(false));
+      document.getElementById('btnPost').addEventListener('click', () => generateAndCopy(true));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target === document.body) {
+          e.preventDefault();
+          generateAndCopy(true);
+        }
+      });
+
+      loadState();
+      updateUI();
+    })();
+  </script>
+</body>
+</html>
